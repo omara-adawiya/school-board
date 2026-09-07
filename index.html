@@ -539,19 +539,37 @@ function persist(){
   pushToServer();
 }
 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZaD3ZjGx-c0Q7weES6IF2_qhRixrksg5jPGSP_pHhJ9qluk06Alj93wxDuUFRi5is-g/exec';
+
 async function pushToServer(){
   try{
-    await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)});
+    // Use no-cors for POST (fire and forget)
+    fetch(GAS_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify(db)
+    });
     showToast('✅ تم الحفظ');
-  }catch(e){}
+  }catch(e){ showToast('❌ خطأ في الحفظ'); }
 }
 
 async function pullFromServer(){
   try{
-    const res=await fetch('/api/data');
-    const data=await res.json();
-    if(data&&Object.keys(data).length>0){db={...db,...data};return true;}
-  }catch(e){}
+    // GET request works with CORS from Apps Script
+    const res = await fetch(GAS_URL + '?t=' + Date.now(), {
+      method:'GET',
+      mode:'cors'
+    });
+    if(!res.ok) return false;
+    const text = await res.text();
+    if(!text || text === '{}') return false;
+    const data = JSON.parse(text);
+    if(data && Object.keys(data).length > 0){
+      db = {...db, ...data};
+      return true;
+    }
+  }catch(e){ console.log('pull error', e); }
   return false;
 }
 
