@@ -556,7 +556,6 @@ async function pushToServer(){
 
 async function pullFromServer(){
   try{
-    // GET request works with CORS from Apps Script
     const res = await fetch(GAS_URL + '?t=' + Date.now(), {
       method:'GET',
       mode:'cors'
@@ -566,7 +565,12 @@ async function pullFromServer(){
     if(!text || text === '{}') return false;
     const data = JSON.parse(text);
     if(data && Object.keys(data).length > 0){
+      // Keep current month/year, only sync months data and settings
+      const savedMonth = db.currentMonth;
+      const savedYear = db.currentYear;
       db = {...db, ...data};
+      db.currentMonth = savedMonth;
+      db.currentYear = savedYear;
       return true;
     }
   }catch(e){ console.log('pull error', e); }
